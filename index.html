@@ -605,10 +605,8 @@
           speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
           setScanState('error');
-          const errMsg = e.message.startsWith('API_ERROR') 
-            ? 'Server error. Please try again later.'
-            : e.message;
-          setErrorMessage(errMsg);
+          // Display the exact error for debugging
+          setErrorMessage(e.message);
           speak(i18n[lang].errorAudio);
         }
       };
