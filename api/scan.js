@@ -59,12 +59,17 @@ export default async function handler(req, res) {
     }
 
     let text = candidate?.content?.parts?.[0]?.text || '{}';
-    // Clean JSON if AI added markdown backticks
-    text = text.replace(/```json|```/g, '').trim();
+    let parsed = {};
+    try {
+      parsed = JSON.parse(text);
+    } catch (e) {
+      console.error("JSON parse failure:", text);
+      return res.status(502).json({ error: "Invalid AI response format." });
+    }
     
-    return res.status(200).json({ result: JSON.parse(text) });
+    return res.status(200).json({ result: parsed });
   } catch (err) {
     console.error("DEBUG api/scan error:", err.message);
-    return res.status(500).json({ error: `Serverless catch: ${err.message}` });
+    return res.status(500).json({ error: `Serverless error: ${err.message}` });
   }
 }

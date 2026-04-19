@@ -415,7 +415,8 @@
         clearHistoryConfirm: "Are you sure you want to clear all scan history?", aboutTitle: "About €cho", 
         aboutText: "Developed for the Philippine Peso. Version 1.1", navScan: "SCAN", navHistory: "HISTORY",
         navSettings: "SETTINGS", camOpenAudio: "Camera open. Position bill in frame.", analyzingAudio: "Analyzing...",
-        errorAudio: "Could not identify bill.", camDenied: "Camera permission denied."
+        errorAudio: "Could not identify bill.", camDenied: "Camera permission denied.",
+        apiError: "Connection problem. Try again.", safetyBlock: "AI restricted. Try better lighting."
       },
       PH: {
         startScanning: "SIMULAN ANG PAG-SCAN", heroInfo: "Mabilisang kilalanin ang mga perang papel ng Pilipinas na may gabay na tunog.",
@@ -426,7 +427,8 @@
         clearHistoryConfirm: "Sigurado ka bang nais mong burahin ang lahat ng kasaysayan?", aboutTitle: "Tungkol sa €cho",
         aboutText: "Ginawa para sa Philippine Peso. Bersyon 1.1", navScan: "SCAN", navHistory: "KASAYSAYAN",
         navSettings: "SETTINGS", camOpenAudio: "Bukas na ang camera. Itapat ang pera sa screen.", analyzingAudio: "Sinusuri...",
-        errorAudio: "Hindi makilala ang pera.", camDenied: "Hindi pinayagan ang paggamit ng camera."
+        errorAudio: "Hindi makilala ang pera.", camDenied: "Hindi pinayagan ang paggamit ng camera.",
+        apiError: "May problema sa koneksyon.", safetyBlock: "Hindi pinayagan ng AI. Ayusin ang ilaw."
       }
     };
     const numberWords = {
@@ -610,10 +612,13 @@
             return newHistory;
           });
           setScanState('result');
-          speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
+          speak(numberWords[lang][d]);
         } catch (e) {
           setScanState('error');
-          setErrorMessage(`v1.2.2 Error: ${e.message}`);
+          let msg = e.message;
+          if (msg.includes('API_ERROR')) msg = i18n[lang].apiError;
+          else if (msg.includes('safety')) msg = i18n[lang].safetyBlock;
+          setErrorMessage(msg);
           speak(i18n[lang].errorAudio);
         }
       };
