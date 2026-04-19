@@ -405,9 +405,29 @@
     const { useState, useRef, useEffect } = React;
 
     const HISTORY_KEY = 'billvoice_history';
+    const i18n = {
+      EN: {
+        startScanning: "START SCANNING", heroInfo: "Instantly identify Philippine Peso bills with audio feedback.",
+        searching: "SEARCHING FOR BILL...", holdDevice: "HOLD DEVICE STEADY OVER THE NOTE", analyzing: "Analyzing Bill...",
+        errorTitle: "ERROR", errorMsg: "Could not identify bill.", tryAgain: "Try Again", scanComplete: "SCAN COMPLETE - HIGH CONFIDENCE",
+        repeatAudio: "REPEAT AUDIO", scanAnother: "SCAN ANOTHER", historyTitle: "Scan History", noScans: "No scans yet.",
+        settingsTitle: "Settings", settingsPlaceholder: "Settings placeholder", navScan: "SCAN", navHistory: "HISTORY",
+        navSettings: "SETTINGS", camOpenAudio: "Camera open. Position bill in frame.", analyzingAudio: "Analyzing...",
+        errorAudio: "Could not identify bill.", camDenied: "Camera permission denied."
+      },
+      PH: {
+        startScanning: "SIMULAN ANG PAG-SCAN", heroInfo: "Mabilisang kilalanin ang mga perang papel ng Pilipinas na may gabay na tunog.",
+        searching: "NAGHAHANAP NG PERA...", holdDevice: "ITAPAT NANG MAAYOS ANG CAMERA SA PERA", analyzing: "Sinusuri ang Pera...",
+        errorTitle: "ERROR", errorMsg: "Hindi makilala ang pera.", tryAgain: "Subukan Muli", scanComplete: "TAPOS NA ANG PAG-SCAN - MATAAS NA KUMPIRMASYON",
+        repeatAudio: "ULITIN ANG TUNOG", scanAnother: "MAG-SCAN NG IBA", historyTitle: "Kasaysayan ng Pag-scan", noScans: "Wala pang nai-scan.",
+        settingsTitle: "Mga Setting", settingsPlaceholder: "Placeholder para sa mga setting", navScan: "SCAN", navHistory: "KASAYSAYAN",
+        navSettings: "SETTINGS", camOpenAudio: "Bukas na ang camera. Itapat ang pera sa screen.", analyzingAudio: "Sinusuri...",
+        errorAudio: "Hindi makilala ang pera.", camDenied: "Hindi pinayagan ang paggamit ng camera."
+      }
+    };
     const numberWords = {
-      20: "TWENTY PESOS", 50: "FIFTY PESOS", 100: "ONE HUNDRED PESOS",
-      200: "TWO HUNDRED PESOS", 500: "FIVE HUNDRED PESOS", 1000: "ONE THOUSAND PESOS"
+      EN: { 20: "TWENTY PESOS", 50: "FIFTY PESOS", 100: "ONE HUNDRED PESOS", 200: "TWO HUNDRED PESOS", 500: "FIVE HUNDRED PESOS", 1000: "ONE THOUSAND PESOS" },
+      PH: { 20: "DALAWAMPUNG PISO", 50: "LIMAMPUNG PISO", 100: "SANDAANG PISO", 200: "DALAWANDAANG PISO", 500: "LIMANDAANG PISO", 1000: "ISANG LIBONG PISO" }
     };
 
     const loadHistory = () => {
@@ -482,6 +502,7 @@
         if ('speechSynthesis' in window) {
            window.speechSynthesis.cancel();
            const u = new SpeechSynthesisUtterance(text);
+           u.lang = lang === 'PH' ? 'fil-PH' : 'en-US';
            window.speechSynthesis.speak(u);
         }
       };
@@ -497,14 +518,14 @@
         try {
           setActiveTab('scan');
           setScanState('camera');
-          speak('Camera open. Position bill in frame.');
+          speak(i18n[lang].camOpenAudio);
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment' }
           });
           streamRef.current = stream;
           if (videoRef.current) videoRef.current.srcObject = stream;
         } catch (err) {
-          alert('Camera permission denied.');
+          alert(i18n[lang].camDenied);
           setScanState('idle');
         }
       };
@@ -512,7 +533,7 @@
       const captureImage = async () => {
         if (scanState !== 'camera') return;
         setScanState('processing');
-        speak('Analyzing...');
+        speak(i18n[lang].analyzingAudio);
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -534,7 +555,7 @@
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  { text: "Identify the denomination of this Philippine Peso bill. Return only the number. Valid numbers are 20, 50, 100, 200, 500, 1000. If you cannot confidently identify it, return 'unknown'." },
+                  { text: "Analyze this image and identify the denomination of the Philippine Peso bill. The valid denominations are 20, 50, 100, 200, 500, or 1000. Return ONLY the numeric value (e.g., 100). Do not include any words, symbols, or explanations. If you cannot confidently identify the bill, return 'unknown'." },
                   { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]
               }]
@@ -556,16 +577,16 @@
           setResult(res);
           setHistory([res, ...history]);
           setScanState('result');
-          speak(`${d} pesos.`);
+          speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
           setScanState('error');
-          setErrorMessage('Could not identify bill.');
-          speak('Could not identify bill.');
+          setErrorMessage(i18n[lang].errorMsg);
+          speak(i18n[lang].errorAudio);
         }
       };
 
       const repeatAudio = () => {
-        if (result) speak(`${result.denomination} pesos.`);
+        if (result) speak(lang === 'PH' ? `${result.denomination} piso.` : `${result.denomination} pesos.`);
       };
 
       // Renders
@@ -578,14 +599,14 @@
 
       const renderBottomNav = () => (
         <div className="bottom-nav">
-          <button className={`nav-item ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => { setActiveTab('scan'); if(scanState!=='idle' && scanState!=='result') setScanState('idle'); stopCamera(); }}>
-            <ScanIcon /> SCAN
+          <button className={`nav-item ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => { setActiveTab('scan'); if (scanState === 'camera') captureImage(); else if (scanState !== 'processing') startCamera(); }}>
+            <ScanIcon /> {i18n[lang].navScan}
           </button>
           <button className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => { setActiveTab('history'); stopCamera(); }}>
-            <HistoryIcon /> HISTORY
+            <HistoryIcon /> {i18n[lang].navHistory}
           </button>
           <button className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); stopCamera(); }}>
-            <SettingsIcon /> SETTINGS
+            <SettingsIcon /> {i18n[lang].navSettings}
           </button>
         </div>
       );
@@ -605,11 +626,11 @@
                   <div className="hero-marker"></div>
                   <h1 className="hero-title">PESO<br/>SCANNER</h1>
                   <div className="hero-info">
-                    Instantly identify Philippine Peso bills with audio feedback.
+                    {i18n[lang].heroInfo}
                   </div>
                 </div>
                 <button className="btn-start-scanning" id="action-scan" onClick={startCamera}>
-                  START SCANNING
+                  {i18n[lang].startScanning}
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M4 6h2v12H4zm4 0h4v12H8zm6 0h2v12h-2zm4 0h2v12h-2z" opacity="0.6"/><path d="M2 4h4v2H4v12h2v2H2V4zm16 0h4v16h-4v-2h2V6h-2V4z"/></svg>
                 </button>
               </div>
@@ -626,9 +647,9 @@
                     <div className="camera-overlay">
                        <div className="searching-box">
                          <div className="searching-header">
-                           <ScanIcon /> SEARCHING FOR BILL...
+                           <ScanIcon /> {i18n[lang].searching}
                          </div>
-                         <div className="searching-sub">HOLD DEVICE STEADY OVER THE NOTE</div>
+                         <div className="searching-sub">{i18n[lang].holdDevice}</div>
                        </div>
                        <div className="camera-guides">
                          <div className="guide-corner gc-tl"></div>
@@ -649,36 +670,36 @@
 
                 {scanState === 'processing' && (
                   <div className="result-screen" style={{justifyContent:'center'}}>
-                    <h2>Analyzing Bill...</h2>
+                    <h2>{i18n[lang].analyzing}</h2>
                   </div>
                 )}
 
                 {scanState === 'error' && (
                   <div className="result-screen">
-                    <div className="status-text" style={{color:'red'}}><div className="status-dot" style={{background:'red'}}></div> ERROR</div>
+                    <div className="status-text" style={{color:'red'}}><div className="status-dot" style={{background:'red'}}></div> {i18n[lang].errorTitle}</div>
                     <p>{errorMessage}</p>
-                    <button className="btn-block btn-another" onClick={startCamera}>Try Again</button>
+                    <button className="btn-block btn-another" onClick={startCamera}>{i18n[lang].tryAgain}</button>
                   </div>
                 )}
 
                 {scanState === 'result' && result && (
                   <div className="result-screen">
                     <div className="status-text">
-                      <div className="status-dot"></div> SCAN COMPLETE - HIGH CONFIDENCE
+                      <div className="status-dot"></div> {i18n[lang].scanComplete}
                     </div>
                     
                     <div className="result-card">
                       <div className="result-denom">₱{result.denomination}</div>
-                      <div className="result-words">{numberWords[result.denomination]}</div>
+                      <div className="result-words">{numberWords[lang][result.denomination]}</div>
                       <div className="result-bg-icon">₱</div>
                     </div>
                     
                     <button className="btn-block btn-repeat" id="action-repeat" onClick={repeatAudio}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                      REPEAT AUDIO
+                      {i18n[lang].repeatAudio}
                     </button>
                     <button className="btn-block btn-another" onClick={startCamera}>
-                      <ScanIcon /> SCAN ANOTHER
+                      <ScanIcon /> {i18n[lang].scanAnother}
                     </button>
                   </div>
                 )}
@@ -690,9 +711,9 @@
               <>
                 {renderHeader()}
                 <div className="history-screen">
-                  <h2 className="history-title">Scan History</h2>
+                  <h2 className="history-title">{i18n[lang].historyTitle}</h2>
                   <div className="history-list">
-                    {history.length === 0 ? <p>No scans yet.</p> :
+                    {history.length === 0 ? <p>{i18n[lang].noScans}</p> :
                       history.map(item => (
                         <div className="history-item" key={item.id}>
                           <div className="hi-val">₱{item.denomination}</div>
@@ -710,8 +731,8 @@
               <>
                 {renderHeader()}
                 <div className="settings-screen">
-                  <h2 className="history-title">Settings</h2>
-                  <p>Settings placeholder</p>
+                  <h2 className="history-title">{i18n[lang].settingsTitle}</h2>
+                  <p>{i18n[lang].settingsPlaceholder}</p>
                 </div>
               </>
             )}
