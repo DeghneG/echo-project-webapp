@@ -24,7 +24,18 @@ export default async function handler(req, res) {
           contents: [{
             parts: [
               {
-                text: `Identify the denomination of this Philippine Peso bill. Reference: 20=Orange/Manuel Quezon, 50=Red/Sergio Osmena, 100=Violet/Manuel Roxas, 200=Green/Macapagal, 500=Yellow/Aquino, 1000=Blue/Jose Abad Santos. Return ONLY the number (e.g. 100). If unsure, return unknown.`
+                text: `You are an expert in Philippine currency. Analyze this image of a Philippine Peso bill (New Generation Currency series). 
+                Identify the denomination based on color, portraits, and security features:
+                - 20: Orange, Manuel L. Quezon
+                - 50: Red, Sergio Osmeña
+                - 100: Violet/Mauve, Manuel Roxas
+                - 200: Green, Diosdado Macapagal
+                - 500: Yellow, Corazon & Benigno Aquino
+                - 1000: Blue, Jose Abad Santos, Vicente Lim, Josefa Llanes Escoda
+                
+                Respond ONLY with a JSON object in this format: 
+                {"denomination": number, "confidence": "high"|"low", "explanation": "brief reason"}
+                If no bill is found or identification is impossible, set denomination to 0.`
               },
               {
                 inlineData: { mimeType: 'image/jpeg', data: imageBase64 }
@@ -41,8 +52,11 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: data?.error?.message || 'Gemini API error' });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return res.status(200).json({ text });
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    // Clean JSON if AI added markdown backticks
+    text = text.replace(/```json|```/g, '').trim();
+    
+    return res.status(200).json({ result: JSON.parse(text) });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

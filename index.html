@@ -555,18 +555,26 @@
           return;
         }
 
+        // Resize image before sending (max 1280px)
+        const MAX_DIM = 1280;
+        let w = video.videoWidth;
+        let h = video.videoHeight;
+        if (w > MAX_DIM || h > MAX_DIM) {
+          if (w > h) { h = (h / w) * MAX_DIM; w = MAX_DIM; }
+          else { w = (w / h) * MAX_DIM; h = MAX_DIM; }
+        }
+
         setScanState('processing');
         speak(i18n[lang].analyzingAudio);
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(video, 0, 0, w, h);
         stopCamera();
 
         let base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
         try {
-          // Call our secure serverless proxy (API key is server-side only)
           const response = await fetch('/api/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -579,24 +587,12 @@
             throw new Error('API_ERROR: ' + (data.error || 'Server error'));
           }
 
-          const txt = (data.text || '').trim().toLowerCase();
-          
-          // Robust Parsing
-          let d = null;
-          const match = txt.match(/(1000|500|200|100|50|20)/);
-          
-          if (match) {
-            d = parseInt(match[0]);
-          } else {
-            if (txt.includes('thousand')) d = 1000;
-            else if (txt.includes('five hundred')) d = 500;
-            else if (txt.includes('two hundred')) d = 200;
-            else if (txt.includes('hundred')) d = 100;
-            else if (txt.includes('fifty')) d = 50;
-            else if (txt.includes('twenty')) d = 20;
-          }
+          const resObj = data.result || {};
+          const d = parseInt(resObj.denomination);
 
-          if (!d) throw new Error("Bill not recognized. Ensure good lighting and hold the bill flat.");
+          if (!d || d === 0) {
+            throw new Error(resObj.explanation || "Bill not recognized. Ensure good lighting and hold the bill flat.");
+          }
 
           const res = { id: Date.now() + Math.random(), denomination: d, timestamp: Date.now() };
           setResult(res);
