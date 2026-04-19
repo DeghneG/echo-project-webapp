@@ -531,29 +531,37 @@
             video: { facingMode: 'environment' }
           });
           streamRef.current = stream;
-          if (videoRef.current) videoRef.current.srcObject = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current.play();
+            };
+          }
         } catch (err) {
           alert(i18n[lang].camDenied);
           setScanState('idle');
         }
       };
 
-      const captureImage = async () => {
-        if (scanState !== 'camera') return;
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        
+        // Ensure video is ready
+        if (!video || !canvas || video.videoWidth === 0) {
+          setScanState('error');
+          setErrorMessage("Camera not ready. Please try again.");
+          return;
+        }
+
         setScanState('processing');
         speak(i18n[lang].analyzingAudio);
 
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        if (video && canvas) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          canvas.getContext('2d').drawImage(video, 0, 0);
-        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
         stopCamera();
 
-        let base64 = '';
-        if (canvas) base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        let base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
         try {
           // GEMINI API
@@ -563,24 +571,50 @@
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  { text: "Analyze this image and identify the denomination of the Philippine Peso bill. Valid denominations are 20, 50, 100, 200, 500, or 1000. Note: 100 PHP bills are Mauve/Violet colored. Return ONLY the numeric value (e.g., 100). If you cannot identify it, return 'unknown'." },
+                  { text: `Identify the denomination of this Philippine Peso bill. 
+                  Reference: 
+                  - 20: Orange, Manuel L. Quezon
+                  - 50: Red, Sergio Osmeña
+                  - 100: Violet/Mauve, Manuel Roxas
+                  - 200: Green, Diosdado Macapagal
+                  - 500: Yellow, Corazon & Benigno Aquino
+                  - 1000: Blue, Jose Abad Santos, Vicente Lim, Josefa Llanes Escoda
+                  
+                  Return ONLY the number (e.g. 100). If unsure, return 'unknown'.` },
                   { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]
               }]
             })
           });
           const data = await response.json();
-          const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+          const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim().toLowerCase();
           
-          // Improved Regex Parsing
-          const match = txt.match(/(20|50|100|200|500|1000)/);
-          if (!match) throw new Error("Unknown");
+          // Robust Parsing
+          let d = null;
+          const map = { 'twenty': 20, 'fifty': 50, 'hundred': 100, 'thousand': 1000 };
+          const match = txt.match(/(1000|500|200|100|50|20)/);
           
-          const d = parseInt(match[0]);
+          if (match) {
+            d = parseInt(match[0]);
+          } else {
+            // Fallback for word forms
+            if (txt.includes('thousand')) d = 1000;
+            else if (txt.includes('five hundred')) d = 500;
+            else if (txt.includes('two hundred')) d = 200;
+            else if (txt.includes('hundred')) d = 100;
+            else if (txt.includes('fifty')) d = 50;
+            else if (txt.includes('twenty')) d = 20;
+          }
 
-          const res = { id: Date.now(), denomination: d, timestamp: Date.now() };
+          if (!d) throw new Error("Unknown");
+
+          const res = { id: Date.now() + Math.random(), denomination: d, timestamp: Date.now() };
           setResult(res);
-          setHistory(prev => [res, ...prev]);
+          setHistory(prev => {
+            const newHistory = [res, ...prev];
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+            return newHistory;
+          });
           setScanState('result');
           speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
