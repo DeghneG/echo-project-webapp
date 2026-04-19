@@ -59,17 +59,22 @@ export default async function handler(req, res) {
     }
 
     let text = candidate?.content?.parts?.[0]?.text || '{}';
+    
+    // Robust JSON Extraction (in case AI adds text around it or markdown tags)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) text = jsonMatch[0];
+
     let parsed = {};
     try {
       parsed = JSON.parse(text);
     } catch (e) {
       console.error("JSON parse failure:", text);
-      return res.status(502).json({ error: "Invalid AI response format." });
+      return res.status(502).json({ error: "AI response format error. Please try again." });
     }
     
     return res.status(200).json({ result: parsed });
   } catch (err) {
     console.error("DEBUG api/scan error:", err.message);
-    return res.status(500).json({ error: `Serverless error: ${err.message}` });
+    return res.status(500).json({ error: `Connection failed: ${err.message}` });
   }
 }
