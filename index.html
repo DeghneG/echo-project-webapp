@@ -1,36 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>€cho - Philippine Peso Scanner</title>
+  <title>PESO SCANNER</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&display=swap');
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Public Sans', sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Public Sans', sans-serif; }
 
     :root {
-      --bg: #fcf9f2;
-      --fg: #2a3439;
-      --moss-green: #4b5d4e;
-      --moss-green-dark: #3a483c;
-      --moss-green-light: #6a826e;
-      --accent: #2e8b57;
-      --error: #d32f2f;
-      --border: #e0dcd3;
-      --radius: 0px;
-      /* Neo-brutalist sharp edges */
+      --moss-dark: #2c3a1d;
+      --moss-green: #3E5425;
+      --moss-light: #708c50;
+      --accent-light: #e0e6c8;
+      --bg-gray: #f4f5f0;
+      --text-dark: #1f2615;
+      --text-gray: #6b7262;
+      --white: #ffffff;
     }
 
     body {
-      background: var(--bg);
-      color: var(--fg);
+      background: var(--bg-gray);
+      color: var(--text-dark);
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
       touch-action: manipulation;
@@ -43,415 +35,365 @@
       position: relative;
     }
 
-    .container {
+    /* Top App Header (Used in Scan/Result/History tabs) */
+    .app-header {
+      background: var(--moss-green);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .app-header h1 {
+      flex: 1;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-right: 24px; /* balance out the hamburger */
+    }
+    .hamburger {
+      width: 24px; height: 18px;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .hamburger span {
+      display: block; width: 100%; height: 2px; background: var(--white);
+    }
+
+    /* Main Container */
+    main {
       flex: 1;
       display: flex;
       flex-direction: column;
+      padding-bottom: 70px; /* space for bottom nav */
+    }
+    main.no-nav {
+      padding-bottom: 0;
+    }
+
+    /* --- IDLE / WELCOME SCREEN --- */
+    .idle-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      padding: 2rem;
+      position: relative;
+    }
+    .lang-toggle {
+      position: absolute;
+      top: 2rem; right: 2rem;
+      display: flex;
+      background: #e9ebe5;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .lang-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-gray);
+      cursor: pointer;
+    }
+    .lang-btn.active {
+      background: var(--accent-light);
+      color: var(--moss-dark);
+    }
+    .hero-section {
+      margin-top: 6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .hero-marker {
+      width: 60px;
+      height: 12px;
+      background: var(--moss-green);
+      margin-bottom: -10px;
+    }
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 0.9;
+      color: var(--moss-dark);
+      letter-spacing: -0.05em;
+    }
+    .hero-info {
+      background: var(--bg-gray);
+      padding: 1.5rem;
+      border-left: 8px solid var(--moss-green);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      line-height: 1.4;
+      margin-top: 1rem;
+    }
+    .btn-start-scanning {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--moss-green);
+      color: var(--white);
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: none;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+    }
+
+    /* --- CAMERA SCREEN --- */
+    .camera-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      margin-top: 3.5rem; /* below header */
+      padding-bottom: 70px; /* above bottom nav */
+      overflow: hidden;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .camera-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .searching-box {
+      margin-top: 4rem;
+      width: 85%;
+      background: rgba(44, 58, 29, 0.85); /* moss transparent */
+      border-left: 6px solid #b5d586;
+      color: var(--white);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .searching-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: 0.05em;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .searching-sub {
+      padding-top: 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.8);
+    }
+    .camera-guides {
+      flex: 1;
+      width: 85%;
+      margin: 2rem 0;
+      border: 2px solid rgba(255,255,255,0.4);
+      position: relative;
+    }
+    .guide-corner {
+      position: absolute;
+      width: 20px; height: 20px;
+      border: 3px solid var(--white);
+    }
+    .gc-tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+    .gc-tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+    .gc-bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+    .gc-br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+    .camera-tools {
+      position: absolute;
+      bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      pointer-events: auto;
+    }
+    .tool-btn {
+      width: 50px; height: 50px;
+      background: var(--accent-light);
+      display: flex; justify-content: center; align-items: center;
+      border: none;
+      cursor: pointer;
+    }
+    .tool-btn.active { background: var(--moss-green); color: white; }
+
+    /* --- RESULT SCREEN --- */
+    .result-screen {
+      padding: 2rem;
+      padding-top: 5.5rem;
+      background: var(--white);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .status-text {
+      width: 100%;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--moss-dark);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+    .status-dot {
+      width: 12px; height: 12px;
+      background: var(--moss-green);
+    }
+    .result-card {
+      width: 100%;
+      background: var(--bg-gray);
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .result-denom {
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: var(--moss-dark);
+      line-height: 1;
+      margin-bottom: 0.5rem;
       position: relative;
       z-index: 2;
     }
-
-    /* Header */
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 1.25rem 1.5rem;
-      background: var(--bg);
-      border-bottom: 2px solid var(--fg);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      font-weight: 900;
-      font-size: 1.75rem;
-      letter-spacing: -0.04em;
-      color: var(--fg);
-      display: flex;
-      align-items: baseline;
-      gap: 0;
-    }
-
-    .logo-euro {
-      color: var(--moss-green);
-      font-weight: 900;
-      font-size: 1.85rem;
-    }
-
-    .logo-text {
-      color: var(--fg);
-      font-weight: 800;
-    }
-
-    .header-controls {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .icon-btn {
-      background: transparent;
-      border: 2px solid var(--fg);
-      padding: 0.5rem 0.75rem;
+    .result-words {
       font-size: 1rem;
       font-weight: 700;
-      color: var(--fg);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      transition: background 0.1s;
-    }
-
-    .icon-btn:hover {
-      background: var(--moss-green);
-      color: white;
-      border-color: var(--moss-green);
-    }
-
-    .icon-btn.active {
-      background: var(--moss-green);
-      color: white;
-      border-color: var(--moss-green);
-    }
-
-    /* Main Screens */
-    main {
-      margin-top: 4.5rem;
-      width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .screen {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-    }
-
-    /* Welcome Screen */
-    .welcome-screen {
-      padding: 2rem;
-      text-align: center;
-    }
-
-    .welcome-title {
-      font-size: 3rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      line-height: 1;
-      margin-bottom: 1rem;
-      color: var(--fg);
-      letter-spacing: -0.05em;
-    }
-
-    .welcome-sub {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--fg);
-      max-width: 300px;
-      margin: 0 auto 2rem;
-    }
-
-    /* Full Width Bottom Button (Heritage Vision Style) */
-    .bottom-action-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: var(--moss-green);
-      padding: 1.5rem;
-      display: flex;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    .btn-massive {
-      width: 100%;
-      max-width: 500px;
-      padding: 1.5rem;
-      background: var(--moss-green);
-      color: white;
-      border: 2px solid white;
-      font-size: 1.5rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-
-    .btn-massive:active,
-    .btn-massive:hover {
-      background: var(--moss-green-dark);
-    }
-
-    .btn-massive.secondary {
-      background: transparent;
-      color: var(--fg);
-      border: 2px solid var(--fg);
-      margin-top: 1rem;
-    }
-
-    .btn-massive.secondary:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    /* Camera Screen */
-    .camera-screen {
+      color: var(--text-dark);
       position: relative;
-      height: 100vh;
-      background: #000;
-      justify-content: flex-start;
-      margin-top: -4.5rem;
-      /* overlay under header */
+      z-index: 2;
     }
-
-    video {
-      width: 100%;
-      height: calc(100vh - 100px);
-      object-fit: cover;
-    }
-
-    .camera-frame {
+    .result-bg-icon {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      aspect-ratio: 1/1.5;
-      border: 4px solid var(--moss-green);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-      pointer-events: none;
-    }
-
-    .camera-target {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 40px;
-      height: 40px;
-      border: 2px dashed rgba(255, 255, 255, 0.5);
-    }
-
-    .camera-status-bar {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      background: var(--moss-green);
-      color: white;
-      text-align: center;
-      padding: 2rem 1rem;
-      font-size: 1.2rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    /* Result Screen */
-    .result-screen {
-      background: var(--bg);
-      padding: 2rem;
-      text-align: center;
-      justify-content: flex-start;
-      margin-top: 2rem;
-    }
-
-    .result-amount {
-      font-size: 7rem;
+      right: -10%;
+      bottom: -10%;
+      font-size: 10rem;
       font-weight: 900;
-      color: var(--moss-green);
+      color: rgba(0,0,0,0.03);
       line-height: 1;
-      margin-bottom: 0.5rem;
-      letter-spacing: -0.05em;
+      z-index: 1;
     }
-
-    .result-text {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--fg);
-      text-transform: uppercase;
-      margin-bottom: 3rem;
-    }
-
-    .action-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-
     .btn-block {
       width: 100%;
-      padding: 1.25rem;
-      font-size: 1.25rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      cursor: pointer;
-      border: 2px solid var(--fg);
-    }
-
-    .btn-primary {
-      background: var(--moss-green);
-      color: white;
-      border-color: var(--moss-green);
-    }
-
-    .btn-primary:hover {
-      background: var(--moss-green-dark);
-      border-color: var(--moss-green-dark);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--fg);
-    }
-
-    .btn-outline:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    /* History Side Panel */
-    .history-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: 200;
-    }
-
-    .history-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      width: 100%;
-      max-width: 400px;
-      background: var(--bg);
-      z-index: 201;
+      padding: 1.1rem;
+      font-size: 1rem;
+      font-weight: 700;
       display: flex;
-      flex-direction: column;
-      border-left: 2px solid var(--fg);
-      transform: translateX(100%);
-      transition: transform 0.3s ease;
-    }
-
-    .history-panel.open {
-      transform: translateX(0);
-    }
-
-    .history-header {
-      padding: 1.5rem;
-      border-bottom: 2px solid var(--fg);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--moss-green);
-      color: white;
-    }
-
-    .history-title {
-      font-size: 1.25rem;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .close-btn {
-      background: transparent;
-      border: 2px solid white;
-      color: white;
-      font-weight: 900;
-      cursor: pointer;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      gap: 0.75rem;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+    .btn-repeat {
+      background: var(--accent-light);
+      color: var(--moss-dark);
+    }
+    .btn-another {
+      background: var(--moss-green);
+      color: var(--white);
     }
 
-    .history-list {
+    /* --- HISTORY TAB --- */
+    .history-screen {
+      padding: 5.5rem 1.5rem 2rem;
       flex: 1;
+      background: var(--white);
       overflow-y: auto;
-      padding: 1rem;
+    }
+    .history-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      color: var(--moss-dark);
+    }
+    .history-list {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
-
     .history-item {
-      padding: 1rem;
-      border: 2px solid var(--fg);
-      background: white;
+      padding: 1.25rem;
+      background: var(--bg-gray);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-left: 4px solid var(--moss-green);
     }
-
-    .h-item-val {
-      font-weight: 900;
+    .hi-val {
       font-size: 1.5rem;
-      color: var(--moss-green);
+      font-weight: 900;
+      color: var(--moss-dark);
     }
-
-    .h-item-time {
-      font-size: 0.8rem;
-      color: var(--fg);
+    .hi-time {
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--text-gray);
     }
 
-    .history-footer {
-      padding: 1.5rem;
-      border-top: 2px solid var(--fg);
+    /* --- SETTINGS TAB --- */
+    .settings-screen {
+      padding: 5.5rem 1.5rem 2rem;
+      flex: 1;
+      background: var(--white);
     }
 
-    /* Audio Indicator */
-    .mic-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--error);
-      margin-right: 0.5rem;
-      animation: blink 2s infinite;
+    /* --- BOTTOM NAVIGATION --- */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 70px;
+      display: flex;
+      background: var(--bg-gray);
+      z-index: 100;
     }
-
-    @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.3;
-      }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-gray);
+      border: none;
+      background: transparent;
+      cursor: pointer;
     }
-
-    /* Helper Utilities */
-    .hidden {
-      display: none !important;
+    .nav-item.active {
+      background: var(--moss-green);
+      color: var(--white);
     }
+    .nav-icon { width: 20px; height: 20px; fill: currentColor; }
 
-    #canvas {
-      display: none;
-    }
+    #canvas { display: none; }
   </style>
 </head>
-
 <body>
   <div id="root"></div>
 
@@ -460,16 +402,12 @@
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
-    const { useState, useRef, useEffect, useCallback } = React;
+    const { useState, useRef, useEffect } = React;
 
     const HISTORY_KEY = 'billvoice_history';
     const numberWords = {
-      20: "TWENTY PESOS",
-      50: "FIFTY PESOS",
-      100: "ONE HUNDRED PESOS",
-      200: "TWO HUNDRED PESOS",
-      500: "FIVE HUNDRED PESOS",
-      1000: "ONE THOUSAND PESOS"
+      20: "TWENTY PESOS", 50: "FIFTY PESOS", 100: "ONE HUNDRED PESOS",
+      200: "TWO HUNDRED PESOS", 500: "FIVE HUNDRED PESOS", 1000: "ONE THOUSAND PESOS"
     };
 
     const loadHistory = () => {
@@ -479,26 +417,42 @@
       } catch { return []; }
     };
 
+    // SVG Icons
+    const ScanIcon = () => (
+      <svg className="nav-icon" viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4V4zm10 0h6v6h-2V6h-4V4zm6 16h-6v-2h4v-4h2v6zM4 20v-6h2v4h4v2H4zm6-9h4v2h-4v-2z"/></svg>
+    );
+    const HistoryIcon = () => (
+      <svg className="nav-icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+    );
+    const SettingsIcon = () => (
+      <svg className="nav-icon" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 C9.65,21.59,9.85,21.76,10.09,21.76h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+    );
+
     function App() {
-      const [state, setState] = useState('idle'); // idle, camera, processing, result, error
+      // General App State
+      const [activeTab, setActiveTab] = useState('scan'); // scan, history, settings
+      const [scanState, setScanState] = useState('idle'); // idle, camera, processing, result, error
+      
       const [result, setResult] = useState(null);
       const [errorMessage, setErrorMessage] = useState('');
       const [history, setHistory] = useState(loadHistory);
-      const [showHistory, setShowHistory] = useState(false);
       const [voiceActive, setVoiceActive] = useState(false);
+      const [lang, setLang] = useState('EN');
 
       const videoRef = useRef(null);
       const canvasRef = useRef(null);
       const streamRef = useRef(null);
       const recognitionRef = useRef(null);
 
-      // --- Speech Recognition (Voice Commands) ---
+      // Save history
+      useEffect(() => {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      }, [history]);
+
+      // Speech Recognition Logic
       useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          console.warn("Speech Recognition not supported in this browser.");
-          return;
-        }
+        if (!SpeechRecognition) return;
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -506,74 +460,31 @@
         recognition.lang = 'en-US';
 
         recognition.onresult = (event) => {
-          const lastResultIndex = event.results.length - 1;
-          const command = event.results[lastResultIndex][0].transcript.trim().toLowerCase();
-          console.log("Voice Command Recognized: ", command);
-
-          // Handle routing based on voice commands
-          if (command.includes('scan') || command.includes('start')) {
-            document.getElementById('action-scan')?.click();
-          } else if (command.includes('capture') || command.includes('take photo')) {
-            document.getElementById('action-capture')?.click();
-          } else if (command.includes('cancel') || command.includes('stop')) {
-            document.getElementById('action-cancel')?.click();
-          } else if (command.includes('repeat') || command.includes('listen')) {
-            document.getElementById('action-repeat')?.click();
-          } else if (command.includes('history')) {
-            document.getElementById('action-history')?.click();
-          } else if (command.includes('close')) {
-            document.getElementById('action-close')?.click();
-          }
+          const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+          if (command.includes('scan') || command.includes('start')) document.getElementById('action-scan')?.click();
+          else if (command.includes('capture') || command.includes('take photo')) document.getElementById('action-capture')?.click();
+          else if (command.includes('repeat')) document.getElementById('action-repeat')?.click();
         };
 
-        recognition.onerror = (event) => {
-          console.error("Speech recognition error", event.error);
-          if (event.error === 'not-allowed') {
-            setVoiceActive(false);
-          }
-        };
-
-        recognition.onend = () => {
-          // Auto-restart if it was intentionally active
-          if (voiceActive) {
-            try { recognition.start(); } catch (e) { }
-          }
-        };
-
+        recognition.onerror = (e) => { if (e.error === 'not-allowed') setVoiceActive(false); };
+        recognition.onend = () => { if (voiceActive) try { recognition.start(); } catch (e) { } };
+        
         recognitionRef.current = recognition;
-
-        return () => {
-          recognition.stop();
-        };
+        return () => recognition.stop();
       }, [voiceActive]);
 
       useEffect(() => {
-        if (voiceActive && recognitionRef.current) {
-          try { recognitionRef.current.start(); } catch (e) { }
-        } else if (!voiceActive && recognitionRef.current) {
-          recognitionRef.current.stop();
-        }
+        if (voiceActive && recognitionRef.current) try { recognitionRef.current.start(); } catch (e) {}
+        else if (!voiceActive && recognitionRef.current) recognitionRef.current.stop();
       }, [voiceActive]);
 
-      // TTS
       const speak = (text) => {
         if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'en-US';
-          window.speechSynthesis.speak(utterance);
+           window.speechSynthesis.cancel();
+           const u = new SpeechSynthesisUtterance(text);
+           window.speechSynthesis.speak(u);
         }
       };
-
-      const vibrate = (pattern = 50) => navigator.vibrate && navigator.vibrate(pattern);
-
-      useEffect(() => {
-        speak('Welcome to Echo. Voice assistant is available. Toggle microphone menu to use commands like "Scan", "Capture", "Repeat", or "Cancel".');
-      }, []);
-
-      useEffect(() => {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-      }, [history]);
 
       const stopCamera = () => {
         if (streamRef.current) {
@@ -584,29 +495,24 @@
 
       const startCamera = async () => {
         try {
-          vibrate(50);
-          setState('camera');
-          speak('Camera open. Position bill in frame, then say Capture or tap the screen.');
-
+          setActiveTab('scan');
+          setScanState('camera');
+          speak('Camera open. Position bill in frame.');
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', width: 1280, height: 720 }
+            video: { facingMode: 'environment' }
           });
           streamRef.current = stream;
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } catch (error) {
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        } catch (err) {
           alert('Camera permission denied.');
-          setState('idle');
-          speak('Camera permission denied.');
+          setScanState('idle');
         }
       };
 
       const captureImage = async () => {
-        if (state !== 'camera') return;
-        vibrate([50, 100, 50]);
-        setState('processing');
-        speak('Processing...');
+        if (scanState !== 'camera') return;
+        setScanState('processing');
+        speak('Analyzing...');
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -617,13 +523,11 @@
         }
         stopCamera();
 
-        let imageDataBase64 = '';
-        if (canvas) {
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          imageDataBase64 = dataUrl.split(',')[1];
-        }
+        let base64 = '';
+        if (canvas) base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
         try {
+          // GEMINI API
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCkQEPdeS4CXF_Oic1nYrlt5p97UnQQCjc`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -631,191 +535,195 @@
               contents: [{
                 parts: [
                   { text: "Identify the denomination of this Philippine Peso bill. Return only the number. Valid numbers are 20, 50, 100, 200, 500, 1000. If you cannot confidently identify it, return 'unknown'." },
-                  { inlineData: { mimeType: "image/jpeg", data: imageDataBase64 } }
+                  { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]
               }]
             })
           });
           const data = await response.json();
-          const textResponse = data.candidates[0].content.parts[0].text.trim().toLowerCase();
+          const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim().toLowerCase();
 
-          let denom;
-          if (textResponse.includes('1000')) denom = 1000;
-          else if (textResponse.includes('500')) denom = 500;
-          else if (textResponse.includes('200')) denom = 200;
-          else if (textResponse.includes('100')) denom = 100;
-          else if (textResponse.includes('50')) denom = 50;
-          else if (textResponse.includes('20')) denom = 20;
-          else throw new Error("Unidentified bill: " + textResponse);
+          let d;
+          if (txt.includes('1000')) d = 1000;
+          else if (txt.includes('500')) d = 500;
+          else if (txt.includes('200')) d = 200;
+          else if (txt.includes('100')) d = 100;
+          else if (txt.includes('50')) d = 50;
+          else if (txt.includes('20')) d = 20;
+          else throw new Error("Unknown");
 
-          const res = { id: Date.now(), denomination: denom, timestamp: Date.now() };
+          const res = { id: Date.now(), denomination: d, timestamp: Date.now() };
           setResult(res);
-          setHistory(prev => [res, ...prev]);
-          setState('result');
-          vibrate([100, 50, 100]);
-          speak(`${denom} pesos.`);
-
+          setHistory([res, ...history]);
+          setScanState('result');
+          speak(`${d} pesos.`);
         } catch (e) {
-          console.error(e);
-          setState('error');
-          setErrorMessage('Could not identify the bill. Please try scanning again.');
-          speak('Could not identify the bill. Please try scanning again.');
+          setScanState('error');
+          setErrorMessage('Could not identify bill.');
+          speak('Could not identify bill.');
         }
       };
 
-      const repeatResult = () => {
-        vibrate(30);
+      const repeatAudio = () => {
         if (result) speak(`${result.denomination} pesos.`);
       };
 
-      const resetApp = () => {
-        vibrate(30);
-        stopCamera();
-        setState('idle');
-        setResult(null);
-        speak('Ready to scan. Say Scan to begin.');
-      };
+      // Renders
+      const renderHeader = () => (
+        <div className="app-header">
+          <div className="hamburger"><span></span><span></span><span></span></div>
+          <h1>PESO SCANNER</h1>
+        </div>
+      );
 
-      const toggleHistory = () => setShowHistory(!showHistory);
+      const renderBottomNav = () => (
+        <div className="bottom-nav">
+          <button className={`nav-item ${activeTab === 'scan' ? 'active' : ''}`} onClick={() => { setActiveTab('scan'); if(scanState!=='idle' && scanState!=='result') setScanState('idle'); stopCamera(); }}>
+            <ScanIcon /> SCAN
+          </button>
+          <button className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => { setActiveTab('history'); stopCamera(); }}>
+            <HistoryIcon /> HISTORY
+          </button>
+          <button className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); stopCamera(); }}>
+            <SettingsIcon /> SETTINGS
+          </button>
+        </div>
+      );
 
       return (
         <>
-          <header>
-            <div className="logo">
-              <span className="logo-euro">€</span>
-              <span className="logo-text">cho</span>
-            </div>
-            <div className="header-controls">
-              <button
-                className={`icon-btn ${voiceActive ? 'active' : ''}`}
-                onClick={() => setVoiceActive(!voiceActive)}
-                title="Toggle Voice Commands"
-              >
-                {voiceActive ? <span className="mic-indicator"></span> : null}
-                🎙️
-              </button>
-              <button
-                className="icon-btn"
-                onClick={toggleHistory}
-                id="action-history"
-                title="View History"
-              >
-                🕒
-              </button>
-              <a 
-                href="https://github.com/DeghneG/echo-project-webapp" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="icon-btn"
-                style={{textDecoration: 'none'}}
-                title="View on GitHub"
-              >
-                <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-                </svg>
-              </a>
-            </div>
-          </header>
-
-          <main>
-            {state === 'idle' && (
-              <div className="screen welcome-screen">
-                <h1 className="welcome-title">Peso Scanner</h1>
-                <p className="welcome-sub">Position your bill in front of the camera.</p>
-                <div className="bottom-action-bar">
-                  <button className="btn-massive" id="action-scan" onClick={startCamera}>
-                    Start Scanning
-                  </button>
+          <main className={activeTab === 'scan' && scanState === 'idle' ? 'no-nav' : ''}>
+            
+            {/* IDLE / WELCOME SCREEN */}
+            {activeTab === 'scan' && scanState === 'idle' && (
+              <div className="idle-screen">
+                <div className="lang-toggle">
+                  <button className={`lang-btn ${lang==='EN'?'active':''}`} onClick={()=>setLang('EN')}>EN</button>
+                  <button className={`lang-btn ${lang==='PH'?'active':''}`} onClick={()=>setLang('PH')}>PH</button>
                 </div>
-              </div>
-            )}
-
-            {state === 'camera' && (
-              <div className="screen camera-screen" onClick={captureImage} id="action-capture">
-                <video ref={videoRef} autoPlay playsInline muted></video>
-                <div className="camera-frame">
-                  <div className="camera-target"></div>
-                </div>
-                <div className="camera-status-bar">
-                  SEARCHING FOR BILL...
-                  <button className="icon-btn" style={{ borderColor: 'white', color: 'white' }} id="action-cancel" onClick={(e) => { e.stopPropagation(); resetApp(); }}>
-                    X CANCEL
-                  </button>
-                </div>
-                <canvas ref={canvasRef}></canvas>
-              </div>
-            )}
-
-            {state === 'processing' && (
-              <div className="screen">
-                <h1 className="welcome-title">Analyzing...</h1>
-              </div>
-            )}
-
-            {state === 'error' && (
-              <div className="screen welcome-screen">
-                <h1 className="welcome-title" style={{ color: 'var(--error)' }}>Error</h1>
-                <p className="welcome-sub">{errorMessage}</p>
-                <div className="bottom-action-bar">
-                  <button className="btn-massive" onClick={resetApp}>
-                    Try Again
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {state === 'result' && result && (
-              <div className="screen result-screen">
-                <div>
-                  <h2 className="result-amount">₱{result.denomination}</h2>
-                  <div className="result-text">{numberWords[result.denomination]}</div>
-                </div>
-
-                <div className="action-stack">
-                  <button className="btn-block btn-outline" id="action-repeat" onClick={repeatResult}>
-                    🔊 Repeat Audio
-                  </button>
-                  <button className="btn-block btn-primary" id="action-scan" onClick={startCamera}>
-                    Scan Again
-                  </button>
-                  <button className="btn-block btn-outline" style={{ border: 'none' }} id="action-cancel" onClick={resetApp}>
-                    Go to Home
-                  </button>
-                </div>
-              </div>
-            )}
-          </main>
-
-          {/* History Drawer */}
-          <div className={`history-panel ${showHistory ? 'open' : ''}`}>
-            <div className="history-header">
-              <h3 className="history-title">Scan History</h3>
-              <button className="close-btn" id="action-close" onClick={toggleHistory}>X</button>
-            </div>
-            <div className="history-list">
-              {history.length === 0 ? <p style={{ padding: '2rem', textAlign: 'center', fontWeight: 'bold' }}>No scans yet.</p> :
-                history.map(item => (
-                  <div className="history-item" key={item.id}>
-                    <div className="h-item-val">₱{item.denomination}</div>
-                    <div className="h-item-time">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                <div className="hero-section">
+                  <div className="hero-marker"></div>
+                  <h1 className="hero-title">PESO<br/>SCANNER</h1>
+                  <div className="hero-info">
+                    Instantly identify Philippine Peso bills with audio feedback.
                   </div>
-                ))
-              }
-            </div>
-            {history.length > 0 && (
-              <div className="history-footer">
-                <button className="btn-block btn-outline" onClick={() => { setHistory([]); speak('History cleared'); }}>Clear History</button>
+                </div>
+                <button className="btn-start-scanning" id="action-scan" onClick={startCamera}>
+                  START SCANNING
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M4 6h2v12H4zm4 0h4v12H8zm6 0h2v12h-2zm4 0h2v12h-2z" opacity="0.6"/><path d="M2 4h4v2H4v12h2v2H2V4zm16 0h4v16h-4v-2h2V6h-2V4z"/></svg>
+                </button>
               </div>
             )}
-          </div>
-          {showHistory && <div className="history-overlay" onClick={toggleHistory}></div>}
 
+            {/* SCANNING TAB (Active State) */}
+            {activeTab === 'scan' && scanState !== 'idle' && (
+              <>
+                {renderHeader()}
+                
+                {scanState === 'camera' && (
+                  <div className="camera-screen" onClick={captureImage} id="action-capture">
+                    <video ref={videoRef} autoPlay playsInline muted></video>
+                    <div className="camera-overlay">
+                       <div className="searching-box">
+                         <div className="searching-header">
+                           <ScanIcon /> SEARCHING FOR BILL...
+                         </div>
+                         <div className="searching-sub">HOLD DEVICE STEADY OVER THE NOTE</div>
+                       </div>
+                       <div className="camera-guides">
+                         <div className="guide-corner gc-tl"></div>
+                         <div className="guide-corner gc-tr"></div>
+                         <div className="guide-corner gc-bl"></div>
+                         <div className="guide-corner gc-br"></div>
+                       </div>
+                       
+                       <div className="camera-tools">
+                         <button className="tool-btn"><svg viewBox="0 0 24 24" width="24" fill="var(--moss-dark)"><path d="M9 21h6v-2h-6v2zm3-19C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z"/></svg></button>
+                         <button className={`tool-btn ${voiceActive?'active':''}`} onClick={(e)=>{e.stopPropagation(); setVoiceActive(!voiceActive)}}><svg viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+                         <button className="tool-btn"><svg viewBox="0 0 24 24" width="24" fill="var(--moss-dark)"><path d="M21 16H3v-2h18v2zm0-6H3V8h18v2zm0-6H3V2h18v2z"/></svg></button>
+                       </div>
+                    </div>
+                    <canvas ref={canvasRef}></canvas>
+                  </div>
+                )}
+
+                {scanState === 'processing' && (
+                  <div className="result-screen" style={{justifyContent:'center'}}>
+                    <h2>Analyzing Bill...</h2>
+                  </div>
+                )}
+
+                {scanState === 'error' && (
+                  <div className="result-screen">
+                    <div className="status-text" style={{color:'red'}}><div className="status-dot" style={{background:'red'}}></div> ERROR</div>
+                    <p>{errorMessage}</p>
+                    <button className="btn-block btn-another" onClick={startCamera}>Try Again</button>
+                  </div>
+                )}
+
+                {scanState === 'result' && result && (
+                  <div className="result-screen">
+                    <div className="status-text">
+                      <div className="status-dot"></div> SCAN COMPLETE - HIGH CONFIDENCE
+                    </div>
+                    
+                    <div className="result-card">
+                      <div className="result-denom">₱{result.denomination}</div>
+                      <div className="result-words">{numberWords[result.denomination]}</div>
+                      <div className="result-bg-icon">₱</div>
+                    </div>
+                    
+                    <button className="btn-block btn-repeat" id="action-repeat" onClick={repeatAudio}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                      REPEAT AUDIO
+                    </button>
+                    <button className="btn-block btn-another" onClick={startCamera}>
+                      <ScanIcon /> SCAN ANOTHER
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* HISTORY TAB */}
+            {activeTab === 'history' && (
+              <>
+                {renderHeader()}
+                <div className="history-screen">
+                  <h2 className="history-title">Scan History</h2>
+                  <div className="history-list">
+                    {history.length === 0 ? <p>No scans yet.</p> :
+                      history.map(item => (
+                        <div className="history-item" key={item.id}>
+                          <div className="hi-val">₱{item.denomination}</div>
+                          <div className="hi-time">{new Date(item.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* SETTINGS TAB */}
+            {activeTab === 'settings' && (
+              <>
+                {renderHeader()}
+                <div className="settings-screen">
+                  <h2 className="history-title">Settings</h2>
+                  <p>Settings placeholder</p>
+                </div>
+              </>
+            )}
+            
+          </main>
+          
+          {/* BOTTOM NAV */}
+          {!(activeTab === 'scan' && scanState === 'idle') && renderBottomNav()}
         </>
       );
     }
-
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
-
 </html>
