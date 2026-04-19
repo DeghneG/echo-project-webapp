@@ -1,0 +1,7 @@
+{
+  "name": "echo-peso-scanner",
+  "version": "1.2.2",
+  "description": "Philippine Peso Bill Scanner with AI Audio Feedback",
+  "type": "module",
+  "dependencies": {}
+}
