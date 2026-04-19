@@ -411,7 +411,9 @@
         searching: "SEARCHING FOR BILL...", holdDevice: "HOLD DEVICE STEADY OVER THE NOTE", analyzing: "Analyzing Bill...",
         errorTitle: "ERROR", errorMsg: "Could not identify bill.", tryAgain: "Try Again", scanComplete: "SCAN COMPLETE - HIGH CONFIDENCE",
         repeatAudio: "REPEAT AUDIO", scanAnother: "SCAN ANOTHER", historyTitle: "Scan History", noScans: "No scans yet.",
-        settingsTitle: "Settings", settingsPlaceholder: "Settings placeholder", navScan: "SCAN", navHistory: "HISTORY",
+        settingsTitle: "Settings", langLabel: "App Language", voiceSpeedLabel: "Audio Speed", clearHistoryBtn: "Clear Scan History",
+        clearHistoryConfirm: "Are you sure you want to clear all scan history?", aboutTitle: "About €cho", 
+        aboutText: "Developed for the Philippine Peso. Version 1.1", navScan: "SCAN", navHistory: "HISTORY",
         navSettings: "SETTINGS", camOpenAudio: "Camera open. Position bill in frame.", analyzingAudio: "Analyzing...",
         errorAudio: "Could not identify bill.", camDenied: "Camera permission denied."
       },
@@ -420,7 +422,9 @@
         searching: "NAGHAHANAP NG PERA...", holdDevice: "ITAPAT NANG MAAYOS ANG CAMERA SA PERA", analyzing: "Sinusuri ang Pera...",
         errorTitle: "ERROR", errorMsg: "Hindi makilala ang pera.", tryAgain: "Subukan Muli", scanComplete: "TAPOS NA ANG PAG-SCAN - MATAAS NA KUMPIRMASYON",
         repeatAudio: "ULITIN ANG TUNOG", scanAnother: "MAG-SCAN NG IBA", historyTitle: "Kasaysayan ng Pag-scan", noScans: "Wala pang nai-scan.",
-        settingsTitle: "Mga Setting", settingsPlaceholder: "Placeholder para sa mga setting", navScan: "SCAN", navHistory: "KASAYSAYAN",
+        settingsTitle: "Mga Setting", langLabel: "Wika ng App", voiceSpeedLabel: "Bilis ng Boses", clearHistoryBtn: "I-clear ang Kasaysayan",
+        clearHistoryConfirm: "Sigurado ka bang nais mong burahin ang lahat ng kasaysayan?", aboutTitle: "Tungkol sa €cho",
+        aboutText: "Ginawa para sa Philippine Peso. Bersyon 1.1", navScan: "SCAN", navHistory: "KASAYSAYAN",
         navSettings: "SETTINGS", camOpenAudio: "Bukas na ang camera. Itapat ang pera sa screen.", analyzingAudio: "Sinusuri...",
         errorAudio: "Hindi makilala ang pera.", camDenied: "Hindi pinayagan ang paggamit ng camera."
       }
@@ -457,17 +461,20 @@
       const [errorMessage, setErrorMessage] = useState('');
       const [history, setHistory] = useState(loadHistory);
       const [voiceActive, setVoiceActive] = useState(false);
-      const [lang, setLang] = useState('EN');
+      const [lang, setLang] = useState(localStorage.getItem('billvoice_lang') || 'EN');
+      const [voiceSpeed, setVoiceSpeed] = useState(parseFloat(localStorage.getItem('billvoice_speed')) || 1.0);
 
       const videoRef = useRef(null);
       const canvasRef = useRef(null);
       const streamRef = useRef(null);
       const recognitionRef = useRef(null);
 
-      // Save history
+      // Save settings
       useEffect(() => {
         localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-      }, [history]);
+        localStorage.setItem('billvoice_lang', lang);
+        localStorage.setItem('billvoice_speed', voiceSpeed.toString());
+      }, [history, lang, voiceSpeed]);
 
       // Speech Recognition Logic
       useEffect(() => {
@@ -503,6 +510,7 @@
            window.speechSynthesis.cancel();
            const u = new SpeechSynthesisUtterance(text);
            u.lang = lang === 'PH' ? 'fil-PH' : 'en-US';
+           u.rate = voiceSpeed;
            window.speechSynthesis.speak(u);
         }
       };
@@ -555,27 +563,24 @@
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  { text: "Analyze this image and identify the denomination of the Philippine Peso bill. The valid denominations are 20, 50, 100, 200, 500, or 1000. Return ONLY the numeric value (e.g., 100). Do not include any words, symbols, or explanations. If you cannot confidently identify the bill, return 'unknown'." },
+                  { text: "Analyze this image and identify the denomination of the Philippine Peso bill. Valid denominations are 20, 50, 100, 200, 500, or 1000. Note: 100 PHP bills are Mauve/Violet colored. Return ONLY the numeric value (e.g., 100). If you cannot identify it, return 'unknown'." },
                   { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]
               }]
             })
           });
           const data = await response.json();
-          const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim().toLowerCase();
-
-          let d;
-          if (txt.includes('1000')) d = 1000;
-          else if (txt.includes('500')) d = 500;
-          else if (txt.includes('200')) d = 200;
-          else if (txt.includes('100')) d = 100;
-          else if (txt.includes('50')) d = 50;
-          else if (txt.includes('20')) d = 20;
-          else throw new Error("Unknown");
+          const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+          
+          // Improved Regex Parsing
+          const match = txt.match(/(20|50|100|200|500|1000)/);
+          if (!match) throw new Error("Unknown");
+          
+          const d = parseInt(match[0]);
 
           const res = { id: Date.now(), denomination: d, timestamp: Date.now() };
           setResult(res);
-          setHistory([res, ...history]);
+          setHistory(prev => [res, ...prev]);
           setScanState('result');
           speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
@@ -732,7 +737,41 @@
                 {renderHeader()}
                 <div className="settings-screen">
                   <h2 className="history-title">{i18n[lang].settingsTitle}</h2>
-                  <p>{i18n[lang].settingsPlaceholder}</p>
+                  
+                  <div className="settings-group" style={{marginBottom:'2rem'}}>
+                    <div style={{fontWeight:'700', marginBottom:'0.5rem'}}>{i18n[lang].langLabel}</div>
+                    <div className="lang-toggle" style={{position:'static'}}>
+                      <button className={`lang-btn ${lang==='EN'?'active':''}`} onClick={()=>setLang('EN')}>EN</button>
+                      <button className={`lang-btn ${lang==='PH'?'active':''}`} onClick={()=>setLang('PH')}>PH</button>
+                    </div>
+                  </div>
+
+                  <div className="settings-group" style={{marginBottom:'2rem'}}>
+                    <div style={{fontWeight:'700', marginBottom:'0.5rem'}}>{i18n[lang].voiceSpeedLabel}: {voiceSpeed.toFixed(1)}x</div>
+                    <input 
+                      type="range" min="0.5" max="2.0" step="0.1" 
+                      value={voiceSpeed} 
+                      onChange={(e)=>setVoiceSpeed(parseFloat(e.target.value))}
+                      style={{width:'100%', accentColor:'var(--moss-green)'}}
+                    />
+                  </div>
+
+                  <button 
+                    className="btn-block" 
+                    style={{background:'var(--accent-light)', color:'var(--moss-dark)', marginTop:'1rem'}}
+                    onClick={()=>{
+                      if(window.confirm(i18n[lang].clearHistoryConfirm)) {
+                        setHistory([]);
+                      }
+                    }}
+                  >
+                    {i18n[lang].clearHistoryBtn}
+                  </button>
+
+                  <div style={{marginTop:'3rem', textAlign:'center', color:'var(--text-gray)', fontSize:'0.8rem'}}>
+                    <strong>{i18n[lang].aboutTitle}</strong><br/>
+                    {i18n[lang].aboutText}
+                  </div>
                 </div>
               </>
             )}
