@@ -573,22 +573,25 @@
             body: JSON.stringify({
               contents: [{
                 parts: [
-                  { text: `Identify the denomination of this Philippine Peso bill. 
-                  Reference: 
-                  - 20: Orange, Manuel L. Quezon
-                  - 50: Red, Sergio Osmeña
-                  - 100: Violet/Mauve, Manuel Roxas
-                  - 200: Green, Diosdado Macapagal
-                  - 500: Yellow, Corazon & Benigno Aquino
-                  - 1000: Blue, Jose Abad Santos, Vicente Lim, Josefa Llanes Escoda
-                  
-                  Return ONLY the number (e.g. 100). If unsure, return 'unknown'.` },
+                  { text: `Identify the denomination of this Philippine Peso bill. Reference: 20=Orange/Manuel Quezon, 50=Red/Sergio Osmena, 100=Violet/Manuel Roxas, 200=Green/Macapagal, 500=Yellow/Aquino, 1000=Blue/Jose Abad Santos. Return ONLY the number. If unsure, return unknown.` },
                   { inlineData: { mimeType: "image/jpeg", data: base64 } }
                 ]
               }]
             })
           });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            const errMsg = errData?.error?.message || `HTTP ${response.status}`;
+            throw new Error('API_ERROR: ' + errMsg);
+          }
+          
           const data = await response.json();
+
+          if (data.error) {
+            throw new Error('API_ERROR: ' + (data.error.message || 'Unknown API error'));
+          }
+
           const txt = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim().toLowerCase();
           
           // Robust Parsing
@@ -598,7 +601,6 @@
           if (match) {
             d = parseInt(match[0]);
           } else {
-            // Fallback for word forms
             if (txt.includes('thousand')) d = 1000;
             else if (txt.includes('five hundred')) d = 500;
             else if (txt.includes('two hundred')) d = 200;
@@ -607,7 +609,7 @@
             else if (txt.includes('twenty')) d = 20;
           }
 
-          if (!d) throw new Error("Unknown");
+          if (!d) throw new Error("Bill not recognized. Ensure good lighting and hold the bill flat.");
 
           const res = { id: Date.now() + Math.random(), denomination: d, timestamp: Date.now() };
           setResult(res);
@@ -620,7 +622,10 @@
           speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
           setScanState('error');
-          setErrorMessage(i18n[lang].errorMsg);
+          const errMsg = e.message.startsWith('API_ERROR') 
+            ? 'API key error. Please update your Gemini API key.'
+            : e.message;
+          setErrorMessage(errMsg);
           speak(i18n[lang].errorAudio);
         }
       };
