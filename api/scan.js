@@ -64,6 +64,7 @@ export default async function handler(req, res) {
     
     return res.status(200).json({ result: JSON.parse(text) });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("DEBUG api/scan error:", err.message);
+    return res.status(500).json({ error: `Serverless catch: ${err.message}` });
   }
 }

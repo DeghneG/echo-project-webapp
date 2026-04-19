@@ -555,8 +555,8 @@
           return;
         }
 
-        // Resize image before sending (max 1280px)
-        const MAX_DIM = 1280;
+        // Resize image before sending (max 800px for speed)
+        const MAX_DIM = 800;
         let w = video.videoWidth;
         let h = video.videoHeight;
         if (w > MAX_DIM || h > MAX_DIM) {
@@ -572,7 +572,8 @@
         canvas.getContext('2d').drawImage(video, 0, 0, w, h);
         stopCamera();
 
-        let base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+        // 0.6 quality for even smaller payload
+        let base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
 
         try {
           const response = await fetch('/api/scan', {
@@ -580,6 +581,13 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: base64 })
           });
+
+          // Check for non-JSON responses (like Vercel timeouts or 404s)
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            const raw = await response.text();
+            throw new Error(`Non-JSON response: ${raw.substring(0, 50)}...`);
+          }
 
           const data = await response.json();
 
@@ -605,8 +613,7 @@
           speak(lang === 'PH' ? `${d} piso.` : `${d} pesos.`);
         } catch (e) {
           setScanState('error');
-          // Display the exact error for debugging
-          setErrorMessage(e.message);
+          setErrorMessage(`v1.2.2 Error: ${e.message}`);
           speak(i18n[lang].errorAudio);
         }
       };
@@ -619,7 +626,7 @@
       const renderHeader = () => (
         <div className="app-header">
           <div className="hamburger"><span></span><span></span><span></span></div>
-          <h1>PESO SCANNER</h1>
+          <h1>PESO SCANNER <span style={{fontSize:'0.6rem', verticalAlign:'middle', opacity:0.7}}>[v1.2.2 Debug]</span></h1>
         </div>
       );
 
